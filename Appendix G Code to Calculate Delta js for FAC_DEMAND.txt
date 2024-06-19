@@ -1,0 +1,39 @@
+#this code calculates the delta j's for the FAC_DEMAND model. In this instance, the percent threshold is set to 0.90. 
+#set working directory
+
+library(dplyr)
+
+BirthFacilityJIndex <- read.csv("Birth Facility AMPL Index Summary.csv")
+BypassingData <- read.csv("BypassingData_v6.csv") #load csv file
+BypassingData <- BypassingData %>% filter(BirthFacilityTypeForBypassAnalysis != "Not for bypassing analysis") #filter out not for bypassing analysis records
+BypassingData <- subset(BypassingData, select = c("mt_guid","bfclitys","bmomrzip4","DistanceMiles"))
+BypassingData <- left_join(BypassingData, BirthFacilityJIndex, by="bfclitys")
+
+PercentThreshold <- 0.90
+TotalBirthsbyFacility <- BypassingData %>% group_by(JIndex) %>% summarize(TotalBirths = n())
+TotalBirthsbyFacility <- TotalBirthsbyFacility %>% mutate(TotalBirthsWithinThreshold = TotalBirths * PercentThreshold)
+
+PercentThresholdSummary <- data.frame(matrix(ncol=2,nrow=0))
+columnnames <- c("J Index", "Percent Threshold Distance")
+colnames(PercentThresholdSummary) <- columnnames	
+
+for (i in 1:28)
+{
+	ThresholdDistance <- 1
+	BirthsInsideThreshold <- BypassingData %>% filter(JIndex == i, DistanceMiles <= ThresholdDistance) %>% count()
+	ThresholdBirths <- TotalBirthsbyFacility %>% filter(JIndex == i) %>% select(TotalBirthsWithinThreshold)
+
+	while (BirthsInsideThreshold <= ThresholdBirths)
+	{
+		ThresholdDistance = ThresholdDistance + 0.1
+		BirthsInsideThreshold <- BypassingData %>% filter(JIndex == i, DistanceMiles <= ThresholdDistance) %>% count()
+	}
+	
+	NewRow <- list(i,ThresholdDistance)
+	PercentThresholdSummary <- rbind(PercentThresholdSummary,NewRow)
+	
+}
+
+colnames(PercentThresholdSummary) <- columnnames
+write.csv(PercentThresholdSummary,"Facility Max Distance Parameters 91%.csv",row.names = FALSE)
+

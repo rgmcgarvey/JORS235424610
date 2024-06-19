@@ -1,0 +1,49 @@
+# This script calculates distance from each facility to every zip code where mothers gave birth.
+
+import time
+import googlemaps
+import csv
+
+#CALCULATING A SINGLE DISTANCE
+#gmaps = googlemaps.Client(key=ENTER KEY HERE)
+#my_distance = gmaps.distance_matrix('30 State Hwy 91 S Dillon, MT 59725','59754')
+
+#CALCULATING MULTIPLE DISTANCES AT ONCE
+#my_distance2 = gmaps.distance_matrix(['59754','59725','59739'],'59725')
+
+FAC_INDEX = 0
+ZCTA_INDEX = 0
+
+gmaps = googlemaps.Client(key='AIzaSyAN_6JRXqoq-yoezHe9otzsSyTS5SUCMKs')
+
+#input = open(r'ENTER PATH FOR CSV WITH HOSPITAL ADDRESSES', 'r')
+#input2 = open(r'ENTER PATH FOR CSV WITH ZCTAs', 'r')
+#output = open(r'ENTER PATH FOR OUTPUT', 'w', newline='')
+
+var=1
+
+try:
+    reader = list(csv.reader(input))
+    reader2 = list(csv.reader(input2))   
+    writer = csv.writer(output)
+    for row in list(reader)[1:]: #for all hospitals
+            
+        for row2 in list(reader2)[1:375]: # for all ZCTAs in Montana
+                      
+            FAC_FROM= row[FAC_INDEX]
+            zcta_TO=row2[ZCTA_INDEX+1]
+       
+            my_distance = gmaps.distance_matrix(FAC_FROM,zcta_TO)
+            try:
+                
+                writer.writerow((FAC_FROM,zcta_TO,my_distance['destination_addresses'],my_distance['origin_addresses'],my_distance['rows'][0]['elements'][0]['distance']['value'],my_distance['rows'][0]['elements'][0]['distance']['text'],my_distance['rows'][0]['elements'][0]['duration']['value'],my_distance['rows'][0]['elements'][0]['duration']['text'] )) #this gives distance in Meters and duration in Minutes
+                                
+            except KeyError:
+                writer.writerow(("","","","","","","","",1,FAC_FROM,zcta_TO))
+                continue
+
+finally:
+    input.close()
+    output.close()
+    input2.close()
+    

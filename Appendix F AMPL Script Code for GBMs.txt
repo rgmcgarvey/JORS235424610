@@ -1,0 +1,70 @@
+#start of script for NO_MAX model. This script solves the model, records the λ parameter (exponent), decision variables (w), and corresponding model percentage error, then increments the λ parameter by 0.05. The script terminates once λ exceeds 5.
+
+repeat
+{
+solve;
+display 
+Exponent, 
+obj / sum {i in ZCTAS, j in FACILITIES} (beta[i,j]),
+w
+;
+let Exponent := Exponent + 0.05;
+}
+until Exponent > 5;
+
+#end of script for NO_MAX model
+
+
+
+
+#start of script for UNIV_MAX model. This script solves the model, records the λ parameter (exponent), decision variables (w), ∆ (MaxDistance) parameter, corresponding model percentage error, and number of births that were assigned to the closest facility for zip codes that did not have any facilites within the maximum distance threshold, then increments the λ parameter by 0.05. Once λ exceeds 5, the MaxDistance is incremented by 5 and the λ parameter (exponent) is reset to 1. This repeats until the ∆ (MaxDistance) parameter exceeds 295.
+
+repeat
+{
+
+repeat
+{
+solve;
+display Exponent, 
+MaxDistance,
+obj / sum {i in ZCTAS, j in FACILITIES} (beta[i,j]),
+w,
+TotalZctaBirthsAutoAssignedToClosestFacility
+;
+let Exponent := Exponent + 0.05;
+}
+until Exponent > 5;
+
+let Exponent := 1;
+let MaxDistance := MaxDistance + 5;
+
+}
+until MaxDistance > 295;
+
+#end of script for UNIV_MAX model
+
+
+
+
+#start of script for FAC_DEMAND model. This script solves the model, records the percentage threshold for the particular model script run (this varied from 90 - 99%), λ parameter (exponent), decision variables (w), corresponding model percentage error, and number of births that were assigned to the closest facility for zip codes that did not have any facilites within the maximum distance threshold, then increments the λ parameter by 0.05. The script terminates once λ exceeds 5.
+
+
+repeat
+{
+solve;
+display Percentile,
+Exponent,
+w, 
+obj / sum {i in ZCTAS, j in FACILITIES} (beta[i,j]),
+TotalZctaBirthsAutoAssignedToClosestFacility
+;
+let Exponent := Exponent + 0.05;
+}
+until Exponent > 5;
+
+#end of script for FAC_DEMAND model
+
+
+
+
+

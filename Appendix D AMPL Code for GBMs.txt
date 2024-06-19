@@ -1,0 +1,185 @@
+#start of code for NO_MAX Model
+
+param F := 28;
+param Z := 374;
+param Exponent default 1;
+
+
+set FACILITIES = 1..F;
+set ZCTAS = 1..Z;
+
+var w {j in FACILITIES};
+var e {z in ZCTAS, j in FACILITIES};
+var z {i in ZCTAS, j in FACILITIES};
+
+
+param beta {i in ZCTAS, j in FACILITIES};
+param distance {i in ZCTAS, j in FACILITIES};
+
+param alpha {i in ZCTAS, j in FACILITIES} := 1/(distance[i,j]^Exponent);
+
+
+
+minimize obj: sum {i in ZCTAS, j in FACILITIES} (z[i,j]);
+
+subject to wlowerbound {j in FACILITIES}: w[j] >=1;
+
+
+
+
+subject to defineWandEvariables{i in ZCTAS, j in FACILITIES}: w[j] * alpha[i,j] * sum {g in FACILITIES} (beta[i,g]) - beta[i,j] * sum {g in FACILITIES} (w[g]*alpha[i,g]) - e[i,j] * sum {g in FACILITIES} (w[g]*alpha[i,g]) = 0;
+subject to defineZabsolutevalue1 {i in ZCTAS, j in FACILITIES}: e[i,j] <= z[i,j];
+subject to defineZabsolutevalue2 {i in ZCTAS, j in FACILITIES}: -e[i,j] <= z[i,j];
+
+
+#end of code for NO_MAX Model
+
+
+
+
+
+
+
+
+
+#start of code for UNIV_MAX Model
+
+#there are additional parameters in this code not discussed in the manuscript dictating that, if a there are no facilities within the maximum distance parameter for a particular zip code, then all of the births in that zip code will go to the closest facility outside the maximum distance parameter. We also created parameters to note how many births were being autoassigned to the closest facility as the maximum distance parameter changed.
+
+param F := 28;
+param Z := 374;
+param MaxDistance default 50;
+param Exponent default 1;
+
+set FACILITIES = 1..F;
+set ZCTAS = 1..Z;
+
+var w {j in FACILITIES};
+var e {z in ZCTAS, j in FACILITIES};
+var z {i in ZCTAS, j in FACILITIES};
+
+param beta {i in ZCTAS, j in FACILITIES};
+param distance {i in ZCTAS, j in FACILITIES};
+param alpha {i in ZCTAS, j in FACILITIES} := if distance[i,j] > MaxDistance then 0 else 1/(distance[i,j]^Exponent);
+param TotalZctaAlpha {i in ZCTAS} := sum {j in FACILITIES} (alpha[i,j]);
+param ZctaBirthsAutoAssignedToClosestFacility {i in ZCTAS} := if TotalZctaAlpha[i] = 0 then sum {j in FACILITIES} (beta[i,j]) else 0;
+param TotalZctaBirthsAutoAssignedToClosestFacility := sum {i in ZCTAS} (ZctaBirthsAutoAssignedToClosestFacility[i]);
+param ClosestFacilityDistance {i in ZCTAS} := min(
+distance[i,1],
+distance[i,2],
+distance[i,3],
+distance[i,4],
+distance[i,5],
+distance[i,6],
+distance[i,7],
+distance[i,8],
+distance[i,9],
+distance[i,10],
+distance[i,11],
+distance[i,12],
+distance[i,13],
+distance[i,14],
+distance[i,15],
+distance[i,16],
+distance[i,17],
+distance[i,18],
+distance[i,19],
+distance[i,20],
+distance[i,21],
+distance[i,22],
+distance[i,23],
+distance[i,24],
+distance[i,25],
+distance[i,26],
+distance[i,27],
+distance[i,28]
+		);
+param ModifiedDistance {i in ZCTAS, j in FACILITIES}:= if (TotalZctaAlpha[i] = 0 and distance[i,j] = ClosestFacilityDistance[i]) then MaxDistance else distance[i,j];
+param ModifiedAlpha {i in ZCTAS, j in FACILITIES} := if ModifiedDistance[i,j] > MaxDistance then 0 else 1/(ModifiedDistance[i,j]^Exponent);
+
+minimize obj: sum {i in ZCTAS, j in FACILITIES} (z[i,j]);
+
+subject to wlowerbound {j in FACILITIES}: w[j] >=1;
+subject to defineWandEvariables{i in ZCTAS, j in FACILITIES}: w[j] * ModifiedAlpha[i,j] * sum {g in FACILITIES} (beta[i,g]) - beta[i,j] * sum {g in FACILITIES} (w[g]*ModifiedAlpha[i,g]) - e[i,j] * sum {g in FACILITIES} (w[g]*ModifiedAlpha[i,g]) = 0;
+subject to defineZabsolutevalue1 {i in ZCTAS, j in FACILITIES}: e[i,j] <= z[i,j];
+subject to defineZabsolutevalue2 {i in ZCTAS, j in FACILITIES}: -e[i,j] <= z[i,j];
+
+
+#end of code for UNIV_MAX Model
+
+
+
+
+
+
+
+
+
+#start of code for FAC_DEMAND Model
+
+#there are additional parameters in this code not discussed in the manuscript dictating that, if a there are no facilities within the maximum distance parameters for a particular zip code, then all of the births in that zip code will go to the closest facility outside the maximum distance parameter. We also created parameters to note how many births were being autoassigned to the closest facility as the maximum distance parameter changed.
+
+param F := 28;
+param Z := 374;
+param Exponent default 1;
+param Percentile := 0.99; #this parameter is not used in the actual model. Instead, it serves as a record for what particular percentage threshold was used. This varied from 90-99%.
+
+
+set FACILITIES = 1..F;
+set ZCTAS = 1..Z;
+
+var w {j in FACILITIES};
+var e {z in ZCTAS, j in FACILITIES};
+var z {i in ZCTAS, j in FACILITIES};
+
+
+param MaxDistance {j in FACILITIES};
+param beta {i in ZCTAS, j in FACILITIES};
+param distance {i in ZCTAS, j in FACILITIES};
+param alpha {i in ZCTAS, j in FACILITIES} := if distance[i,j] > MaxDistance[j] then 0 else 1/(distance[i,j]^Exponent);
+param TotalZctaAlpha {i in ZCTAS} := sum {j in FACILITIES} (alpha[i,j]);
+param ZctaBirthsAutoAssignedToClosestFacility {i in ZCTAS} := if TotalZctaAlpha[i] = 0 then sum {j in FACILITIES} (beta[i,j]) else 0;
+param TotalZctaBirthsAutoAssignedToClosestFacility := sum {i in ZCTAS} (ZctaBirthsAutoAssignedToClosestFacility[i]);
+param ClosestFacilityDistance {i in ZCTAS} := min(
+distance[i,1],
+distance[i,2],
+distance[i,3],
+distance[i,4],
+distance[i,5],
+distance[i,6],
+distance[i,7],
+distance[i,8],
+distance[i,9],
+distance[i,10],
+distance[i,11],
+distance[i,12],
+distance[i,13],
+distance[i,14],
+distance[i,15],
+distance[i,16],
+distance[i,17],
+distance[i,18],
+distance[i,19],
+distance[i,20],
+distance[i,21],
+distance[i,22],
+distance[i,23],
+distance[i,24],
+distance[i,25],
+distance[i,26],
+distance[i,27],
+distance[i,28]
+		);
+param ModifiedDistance {i in ZCTAS, j in FACILITIES}:= if (TotalZctaAlpha[i] = 0 and distance[i,j] = ClosestFacilityDistance[i]) then MaxDistance[j] else distance[i,j];
+param ModifiedAlpha {i in ZCTAS, j in FACILITIES} := if ModifiedDistance[i,j] > MaxDistance[j] then 0 else 1/(ModifiedDistance[i,j]^Exponent);
+
+minimize obj: sum {i in ZCTAS, j in FACILITIES} (z[i,j]);
+
+subject to wlowerbound {j in FACILITIES}: w[j] >=1;
+subject to defineWandEvariables{i in ZCTAS, j in FACILITIES}: w[j] * ModifiedAlpha[i,j] * sum {g in FACILITIES} (beta[i,g]) - beta[i,j] * sum {g in FACILITIES} (w[g]*ModifiedAlpha[i,g]) - e[i,j] * sum {g in FACILITIES} (w[g]*ModifiedAlpha[i,g]) = 0;
+subject to defineZabsolutevalue1 {i in ZCTAS, j in FACILITIES}: e[i,j] <= z[i,j];
+subject to defineZabsolutevalue2 {i in ZCTAS, j in FACILITIES}: -e[i,j] <= z[i,j];
+
+
+#end of code for FAC_DEMAND Model
+
