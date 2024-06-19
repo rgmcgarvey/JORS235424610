@@ -14,7 +14,7 @@ import csv
 FAC_INDEX = 0
 ZCTA_INDEX = 0
 
-gmaps = googlemaps.Client(key='AIzaSyAN_6JRXqoq-yoezHe9otzsSyTS5SUCMKs')
+gmaps = googlemaps.Client(key=ENTER KEY HERE)
 
 #input = open(r'ENTER PATH FOR CSV WITH HOSPITAL ADDRESSES', 'r')
 #input2 = open(r'ENTER PATH FOR CSV WITH ZCTAs', 'r')
